@@ -29,6 +29,15 @@ func TestGetDefaultArchs(t *testing.T) {
 	assert.Equal(t, ArchList, results, "arch results do not match")
 }
 
+func TestGetArchsSpace(t *testing.T) {
+	testArchs := []string{"386 amd64", "arm,arm64"}
+	results, err := GetArchs(testArchs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"386", "amd64", "arm", "arm64"}
+	assert.Equal(t, expected, results, "arch results do not match")
+}
+
 func TestGetOSs(t *testing.T) {
 	testOSs := []string{"darwin", "linux", "windows", "rasbian"}
 	results, err := GetOSs(testOSs)
@@ -43,6 +52,15 @@ func TestGetDefaultOSs(t *testing.T) {
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, OSList, results, "os results do not match")
+}
+
+func TestGetOSsSpace(t *testing.T) {
+	testOSs := []string{"darwin linux", "windows,rasbian"}
+	results, err := GetOSs(testOSs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"darwin", "linux", "windows", "rasbian"}
+	assert.Equal(t, expected, results, "os results do not match")
 }
 
 func TestGetArchives(t *testing.T) {

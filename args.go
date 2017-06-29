@@ -89,7 +89,9 @@ func GetArchs(userArch []string) ([]string, error) {
 	if len(userArch) == 1 && strings.ToLower(userArch[0]) == "all" {
 		return ArchList, nil
 	}
-	return userArch, nil
+
+	cleanList := splitListItems(userArch)
+	return cleanList, nil
 }
 
 func GetOSs(userOS []string) ([]string, error) {
@@ -99,7 +101,9 @@ func GetOSs(userOS []string) ([]string, error) {
 	if len(userOS) == 1 && strings.ToLower(userOS[0]) == "all" {
 		return OSList, nil
 	}
-	return userOS, nil
+
+	cleanList := splitListItems(userOS)
+	return cleanList, nil
 }
 
 func GetArchiveTypes(userArchive []string) ([]string, error) {
@@ -110,8 +114,10 @@ func GetArchiveTypes(userArchive []string) ([]string, error) {
 		return ArchiveList, nil
 	}
 
+	cleanList := splitListItems(userArchive)
+
 	validArchives := []string{}
-	for _, archive := range userArchive {
+	for _, archive := range cleanList {
 		for _, dArchive := range ArchiveList {
 			if strings.ToLower(archive) == dArchive {
 				validArchives = append(validArchives, archive)
@@ -121,6 +127,20 @@ func GetArchiveTypes(userArchive []string) ([]string, error) {
 	}
 
 	return validArchives, nil
+}
+
+func splitListItems(list []string) []string {
+	cleanList := []string{}
+	for _, item := range list {
+		if parts := strings.Split(item, " "); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else if parts := strings.Split(item, ","); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else {
+			cleanList = append(cleanList, item)
+		}
+	}
+	return cleanList
 }
 
 // GetAppDirs returns the file paths to the packages that are "main"
