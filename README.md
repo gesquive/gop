@@ -57,6 +57,7 @@ Flags:
   -a, --arch stringSlice      List of architectures to package (default [386,amd64,amd64p32,arm,arm64,ppc64,ppc64le])
   -r, --archive stringSlice   List of package types to create (default [zip,tar.gz,tar.xz])
   -c, --config string         config file (default .gack.yml)
+  -d, --delete                Delete the packaged executables
   -f, --files stringSlice     Add additional file to package
   -h, --help                  help for gack
   -i, --input string          The input path template. (default "{{.Dir}}_{{.OS}}_{{.Arch}}")

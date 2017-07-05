@@ -60,6 +60,8 @@ func init() {
 		"List of operating systems to package")
 	RootCmd.PersistentFlags().StringSliceP("arch", "a", ArchList,
 		"List of architectures to package")
+	RootCmd.PersistentFlags().BoolP("delete", "d", false,
+		"Delete the packaged executables")
 
 	RootCmd.PersistentFlags().MarkHidden("debug")
 
@@ -69,12 +71,14 @@ func init() {
 	viper.BindPFlag("archive", RootCmd.PersistentFlags().Lookup("archive"))
 	viper.BindPFlag("os", RootCmd.PersistentFlags().Lookup("os"))
 	viper.BindPFlag("arch", RootCmd.PersistentFlags().Lookup("arch"))
+	viper.BindPFlag("delete", RootCmd.PersistentFlags().Lookup("delete"))
 
 	viper.SetDefault("input", "{{.Dir}}_{{.OS}}_{{.Arch}}")
 	viper.SetDefault("output", "{{.Dir}}_{{.OS}}_{{.Arch}}.{{.Archive}}")
 	viper.SetDefault("archive", DefaultArchiveList)
 	viper.SetDefault("os", OSList)
 	viper.SetDefault("arch", ArchList)
+	viper.SetDefault("delete", false)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -174,9 +178,15 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}
 
-type TemplateData struct {
-	Dir     string
-	OS      string
-	Arch    string
-	Archive string
+	cli.Debug("cfg: delete=%s", viper.GetBool("delete"))
+	if viper.GetBool("delete") {
+		cli.Info("Cleaning up executables")
+		for _, pkg := range packages {
+			os.Remove(pkg.ExePath)
+			dir := path.Dir(pkg.ExePath)
+			if isEmpty, _ := IsEmpty(dir); isEmpty {
+				os.Remove(dir)
+			}
+		}
+	}
 }
