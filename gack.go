@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
 	"os"
 	"path"
-	"path/filepath"
 
 	"github.com/gesquive/cli"
 	homedir "github.com/mitchellh/go-homedir"
@@ -151,57 +148,31 @@ func run(cmd *cobra.Command, args []string) {
 		cli.Fatal("error getting app dirs: %s", err)
 	}
 
-	packages, err := GetPackages(archList, osList, archiveList)
+	packages, err := GetUserDefinedPackages(archList, osList, archiveList)
 	if err != nil {
 		cli.Fatal("error getting package list: %s", err)
 	}
+	cli.Debug("packages found: %s", packages)
+
+	packages, err = GetPackagePaths(packages, appDirs, inputTemplate, outputTemplate)
+	if err != nil {
+		cli.Fatal("error getting package paths: %s", err)
+	}
+
+	packages, err = GetPackageFiles(packages, fileList)
+	if err != nil {
+		cli.Fatal("error getting package files: %s", err)
+	}
+
 	cli.Info("Packaging archives:")
+
 	for _, pkg := range packages {
-		for _, path := range appDirs {
-			// for each package generate an input path and check to see if it exists
-			tpl, err := template.New("input").Parse(inputTemplate)
-			if err != nil {
-				cli.Fatal("input template error: %s", err)
-			}
-
-			data := TemplateData{
-				Dir:     filepath.Base(path),
-				OS:      pkg.OS,
-				Arch:    pkg.Arch,
-				Archive: pkg.Archive,
-			}
-
-			var inputPath bytes.Buffer
-			if err := tpl.Execute(&inputPath, &data); err != nil {
-				cli.Fatal("error generating input path: %s", err)
-			}
-
-			if _, err := os.Stat(inputPath.String()); err != nil {
-				// file does not exist, move on
-				continue
-			}
-			// file exists, package it
-			cli.Debug("found exe=%s", inputPath.String())
-
-			outputTpl, err := template.New("output").Parse(outputTemplate)
-			if err != nil {
-				cli.Fatal("output template error: %s", err)
-			}
-
-			var outputPath bytes.Buffer
-			if err := outputTpl.Execute(&outputPath, &data); err != nil {
-				cli.Fatal("error generating output path: %s", err)
-			}
-
-			archiveFiles := append([]string{inputPath.String()}, fileList...)
-			cli.Info("--> %32s", outputPath.String())
-			err = Archive(outputPath.String(), data.Archive, archiveFiles)
-			if err != nil {
-				cli.Error("error: %s", err)
-			}
+		cli.Info("--> %60s", pkg.ArchivePath)
+		err = Archive(pkg.ArchivePath, pkg.Archive, pkg.FileList)
+		if err != nil {
+			cli.Error("error: %s", err)
 		}
 	}
-}
 
 type TemplateData struct {
 	Dir     string

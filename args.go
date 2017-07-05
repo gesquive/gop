@@ -3,17 +3,26 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"html/template"
+	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/gesquive/cli"
+	"github.com/pkg/errors"
 )
 
 // Package is a combination of OS/arch/archive that can be packaged.
 type Package struct {
-	OS      string
-	Arch    string
-	Archive string
+	OS          string
+	Arch        string
+	Archive     string
+	ExePath     string
+	ArchivePath string
+	FileList    []string
+	Dir         string
 }
 
 // func (p *Package) String() string {
@@ -21,6 +30,7 @@ type Package struct {
 // }
 
 var (
+	// OSList is the full list of golang OSs
 	OSList = []string{
 		"darwin",
 		"dragonfly",
@@ -33,6 +43,7 @@ var (
 		"windows",
 	}
 
+	// ArchList is the full list of golang architectures
 	ArchList = []string{
 		"386",
 		"amd64",
@@ -43,12 +54,14 @@ var (
 		"ppc64le",
 	}
 
+	// DefaultArchiveList is the list of default archives
 	DefaultArchiveList = []string{
 		"zip",
 		"tar.gz",
 		"tar.xz",
 	}
 
+	// ArchiveList is the full list of supported archives
 	ArchiveList = []string{
 		"zip",
 		"tar",
@@ -65,23 +78,7 @@ var (
 	}
 )
 
-func GetPackages(userArch []string, userOS []string, userArchive []string) ([]Package, error) {
-	archList, _ := GetArchs(userArch)
-	osList, _ := GetOSs(userOS)
-	archiveList, _ := GetArchiveTypes(userArchive)
-
-	packageList := []Package{}
-	for _, arch := range archList {
-		for _, os := range osList {
-			for _, archive := range archiveList {
-				packageList = append(packageList, Package{Arch: arch, OS: os, Archive: archive})
-			}
-		}
-	}
-
-	return packageList, nil
-}
-
+// GetArchs generates a list of architectures from the user defined list
 func GetArchs(userArch []string) ([]string, error) {
 	if len(userArch) == 0 {
 		return ArchList, nil
@@ -94,6 +91,7 @@ func GetArchs(userArch []string) ([]string, error) {
 	return cleanList, nil
 }
 
+// GetOSs generates a list of OSs from the user defined list
 func GetOSs(userOS []string) ([]string, error) {
 	if len(userOS) == 0 {
 		return OSList, nil
@@ -106,6 +104,7 @@ func GetOSs(userOS []string) ([]string, error) {
 	return cleanList, nil
 }
 
+// GetArchiveTypes generates a list of valid archive types from the user defined list
 func GetArchiveTypes(userArchive []string) ([]string, error) {
 	if len(userArchive) == 0 || len(userArchive) == 1 && strings.ToLower(userArchive[0]) == "default" {
 		return DefaultArchiveList, nil
@@ -127,20 +126,6 @@ func GetArchiveTypes(userArchive []string) ([]string, error) {
 	}
 
 	return validArchives, nil
-}
-
-func splitListItems(list []string) []string {
-	cleanList := []string{}
-	for _, item := range list {
-		if parts := strings.Split(item, " "); len(parts) > 1 {
-			cleanList = append(cleanList, parts...)
-		} else if parts := strings.Split(item, ","); len(parts) > 1 {
-			cleanList = append(cleanList, parts...)
-		} else {
-			cleanList = append(cleanList, item)
-		}
-	}
-	return cleanList
 }
 
 // GetAppDirs returns the file paths to the packages that are "main"
@@ -181,6 +166,88 @@ func GetAppDirs(packages []string) ([]string, error) {
 	return results, nil
 }
 
+func splitListItems(list []string) []string {
+	cleanList := []string{}
+	for _, item := range list {
+		if parts := strings.Split(item, " "); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else if parts := strings.Split(item, ","); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else {
+			cleanList = append(cleanList, item)
+		}
+	}
+	return cleanList
+}
+
+// GetUserDefinedPackages generates a list of packages from the user defined arguments
+func GetUserDefinedPackages(userArch []string, userOS []string, userArchive []string) ([]Package, error) {
+	archList, _ := GetArchs(userArch)
+	osList, _ := GetOSs(userOS)
+	archiveList, _ := GetArchiveTypes(userArchive)
+
+	packageList := []Package{}
+	for _, arch := range archList {
+		for _, os := range osList {
+			for _, archive := range archiveList {
+				packageList = append(packageList, Package{Arch: arch, OS: os, Archive: archive})
+			}
+		}
+	}
+
+	return packageList, nil
+}
+
+// GetPackagePaths generates info about the archives
+func GetPackagePaths(packages []Package, dirs []string, inputTemplate string,
+	outputTemplate string) ([]Package, error) {
+	filledPackages := []Package{}
+	for _, pkg := range packages {
+		for _, path := range dirs {
+			filledPkg := Package{
+				Dir:     filepath.Base(path),
+				OS:      pkg.OS,
+				Arch:    pkg.Arch,
+				Archive: pkg.Archive,
+			}
+
+			inputTpl, err := template.New("input").Parse(inputTemplate)
+			if err != nil {
+				return nil, errors.Wrap(err, "input template error")
+			}
+			var inputPath bytes.Buffer
+			if err = inputTpl.Execute(&inputPath, &filledPkg); err != nil {
+				return nil, errors.Wrap(err, "error generating input path")
+			}
+			filledPkg.ExePath = inputPath.String()
+
+			outputTpl, err := template.New("output").Parse(outputTemplate)
+			if err != nil {
+				return nil, errors.Wrap(err, "output template error")
+			}
+
+			var outputPath bytes.Buffer
+			if err := outputTpl.Execute(&outputPath, &filledPkg); err != nil {
+				return nil, errors.Wrap(err, "error generating output path")
+			}
+			filledPkg.ArchivePath = outputPath.String()
+
+			filledPackages = append(filledPackages, filledPkg)
+		}
+	}
+	return filledPackages, nil
+}
+
+func GetPackageFiles(packages []Package, fileList []string) ([]Package, error) {
+	pkgs := []Package{}
+	for _, pkg := range packages {
+		files := append([]string{pkg.ExePath}, fileList...)
+		pkg.FileList = files
+		pkgs = append(pkgs, pkg)
+	}
+	return pkgs, nil
+}
+
 // NOTE: The original code can be found at the gox repo
 //	https://raw.githubusercontent.com/mitchellh/gox/master/go.go
 func execGo(GoCmd string, env []string, dir string, args ...string) (string, error) {
@@ -202,13 +269,18 @@ func execGo(GoCmd string, env []string, dir string, args ...string) (string, err
 	return stdout.String(), nil
 }
 
-const versionSource = `package main
+// IsEmpty checks to see if a directory is empty
+// src: https://stackoverflow.com/a/30708914/613218
+func IsEmpty(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
 
-import (
-	"fmt"
-	"runtime"
-)
-
-func main() {
-	fmt.Print(runtime.Version())
-}`
+	_, err = f.Readdirnames(1) // Or f.Readdir(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err // Either not empty or error, suits both cases
+}
