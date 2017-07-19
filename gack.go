@@ -60,6 +60,8 @@ func init() {
 		"List of operating systems to package")
 	RootCmd.PersistentFlags().StringSliceP("arch", "a", ArchList,
 		"List of architectures to package")
+	RootCmd.PersistentFlags().StringSliceP("packages", "p", []string{},
+		"List of os/arch/archive groups to package")
 	RootCmd.PersistentFlags().BoolP("delete", "d", false,
 		"Delete the packaged executables")
 
@@ -71,6 +73,7 @@ func init() {
 	viper.BindPFlag("archive", RootCmd.PersistentFlags().Lookup("archive"))
 	viper.BindPFlag("os", RootCmd.PersistentFlags().Lookup("os"))
 	viper.BindPFlag("arch", RootCmd.PersistentFlags().Lookup("arch"))
+	viper.BindPFlag("pkgs", RootCmd.PersistentFlags().Lookup("packages"))
 	viper.BindPFlag("delete", RootCmd.PersistentFlags().Lookup("delete"))
 
 	viper.SetDefault("input", "{{.Dir}}_{{.OS}}_{{.Arch}}")
@@ -152,7 +155,8 @@ func run(cmd *cobra.Command, args []string) {
 		cli.Fatal("error getting app dirs: %s", err)
 	}
 
-	packages, err := GetUserDefinedPackages(archList, osList, archiveList)
+	userPackages := viper.GetStringSlice("packages")
+	packages, err := AssemblePackageInfo(archList, osList, archiveList, userPackages)
 	if err != nil {
 		cli.Fatal("error getting package list: %s", err)
 	}
@@ -171,6 +175,10 @@ func run(cmd *cobra.Command, args []string) {
 	cli.Info("Packaging archives:")
 
 	for _, pkg := range packages {
+		if _, err := os.Stat(pkg.ExePath); os.IsNotExist(err) {
+			cli.Debug("xxx %60s", pkg.ArchivePath)
+			continue
+		}
 		cli.Info("--> %60s", pkg.ArchivePath)
 		err = Archive(pkg.ArchivePath, pkg.Archive, pkg.FileList)
 		if err != nil {
@@ -178,7 +186,7 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	cli.Debug("cfg: delete=%s", viper.GetBool("delete"))
+	cli.Debug("cfg: delete=%t", viper.GetBool("delete"))
 	if viper.GetBool("delete") {
 		cli.Info("Cleaning up executables")
 		for _, pkg := range packages {

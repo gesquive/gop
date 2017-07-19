@@ -25,9 +25,24 @@ type Package struct {
 	Dir         string
 }
 
-// func (p *Package) String() string {
-// 	return fmt.Sprintf("%s-%s-%s", p.OS, p.Arch, p.Archive)
-// }
+func (p *Package) String() string {
+	return fmt.Sprintf("%s/%s/%s", p.OS, p.Arch, p.Archive)
+}
+
+func ParsePackage(pkgString string) (Package, error) {
+	pkg := Package{}
+	parts := strings.SplitN(pkgString, "/", 3)
+	if len(parts) > 0 {
+		pkg.OS = parts[0]
+	}
+	if len(parts) > 1 {
+		pkg.Arch = parts[1]
+	}
+	if len(parts) > 2 {
+		pkg.Archive = parts[2]
+	}
+	return pkg, nil
+}
 
 var (
 	// OSList is the full list of golang OSs
@@ -102,6 +117,19 @@ func GetOSs(userOS []string) ([]string, error) {
 
 	cleanList := splitListItems(userOS)
 	return cleanList, nil
+}
+
+func GetUserPackages(userPkgs []string) ([]Package, error) {
+	pkgs := []Package{}
+	userPkgs = splitListItems(userPkgs)
+	for _, userPkg := range userPkgs {
+		pkg, err := ParsePackage(userPkg)
+		if err != nil {
+			continue
+		}
+		pkgs = append(pkgs, pkg)
+	}
+	return pkgs, nil
 }
 
 // GetArchiveTypes generates a list of valid archive types from the user defined list
@@ -180,17 +208,35 @@ func splitListItems(list []string) []string {
 	return cleanList
 }
 
-// GetUserDefinedPackages generates a list of packages from the user defined arguments
-func GetUserDefinedPackages(userArch []string, userOS []string, userArchive []string) ([]Package, error) {
+func appendIfMissing(pkgs []Package, pkg Package) []Package {
+	match := strings.ToLower(pkg.String())
+	missing := true
+	for _, existing := range pkgs {
+		if strings.ToLower(existing.String()) == match {
+			missing = false
+		}
+	}
+
+	if missing {
+		pkgs = append(pkgs, pkg)
+	}
+	return pkgs
+}
+
+// AssemblePackageInfo generates a list of packages from the user defined arguments
+func AssemblePackageInfo(userArch []string, userOS []string,
+	userArchive []string, userPackages []string) ([]Package, error) {
 	archList, _ := GetArchs(userArch)
 	osList, _ := GetOSs(userOS)
 	archiveList, _ := GetArchiveTypes(userArchive)
+	specificList, _ := GetUserPackages(userPackages)
 
-	packageList := []Package{}
+	packageList := specificList
 	for _, arch := range archList {
 		for _, os := range osList {
 			for _, archive := range archiveList {
-				packageList = append(packageList, Package{Arch: arch, OS: os, Archive: archive})
+				pkg := Package{Arch: arch, OS: os, Archive: archive}
+				packageList = appendIfMissing(packageList, pkg)
 			}
 		}
 	}

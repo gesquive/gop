@@ -80,21 +80,44 @@ func TestGetDefaultArchives(t *testing.T) {
 	assert.Equal(t, DefaultArchiveList, results, "archive results do not match")
 }
 
-func TestGetDefaultPackages(t *testing.T) {
-	results, err := GetUserDefinedPackages([]string{}, []string{}, []string{})
+func TestAssemblePackageInfo_DefaultList(t *testing.T) {
+	results, err := AssemblePackageInfo([]string{}, []string{}, []string{}, []string{})
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, 189, len(results), "package results do not match")
 }
 
-func TestGetUserDefinedPackages(t *testing.T) {
+func TestAssemblePackageInfo_SingleAssembled(t *testing.T) {
 	pkg := Package{Arch: "amd64", OS: "linux", Archive: "tar.xz"}
-	results, err := GetUserDefinedPackages([]string{pkg.Arch}, []string{pkg.OS},
-		[]string{pkg.Archive})
+	results, err := AssemblePackageInfo([]string{pkg.Arch}, []string{pkg.OS},
+		[]string{pkg.Archive}, []string{})
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []Package{pkg}
 	assert.Equal(t, expected, results, "package results do not match")
+}
+
+func TestAssemblePackageInfo_DefineDuplicate(t *testing.T) {
+	pkg := Package{Arch: "amd64", OS: "linux", Archive: "tar.xz"}
+	results, err := AssemblePackageInfo([]string{pkg.Arch}, []string{pkg.OS},
+		[]string{pkg.Archive}, []string{"linux/amd64/tar.xz"})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 1, "unexpected number of results")
+
+	expected := []Package{pkg}
+	assert.Equal(t, expected, results, "package results do not match")
+}
+
+func TestAssemblePackageInfo_DefineAndAssemble(t *testing.T) {
+	pkg := Package{Arch: "amd64", OS: "linux", Archive: "tar.xz"}
+	pkg2 := Package{Arch: "arm", OS: "linux", Archive: "tar.gz"}
+	results, err := AssemblePackageInfo([]string{pkg.Arch}, []string{pkg.OS},
+		[]string{pkg.Archive}, []string{pkg2.String()})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 2, "unexpected number of results")
+
+	assert.Contains(t, results, pkg, "package missing from results")
+	assert.Contains(t, results, pkg2, "package missing from results")
 }
 
 func TestGetPackagePaths(t *testing.T) {
