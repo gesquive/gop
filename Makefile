@@ -77,25 +77,27 @@ clean: ## Clean the directory tree of artifacts
 	rm -f ./${BIN_NAME}
 	rm -rf ./dist
 
-.PHONY: build-all
-build-all: gox
+.PHONY: build-dist
+build-dist: gox
 	gox -verbose \
 	-ldflags "-X main.version=${VERSION} -X main.dirty=${GIT_DIRTY}" \
 	-os="linux darwin windows" \
 	-arch="amd64 386" \
-	-output=qq"dist/{{.OS}}-{{.Arch}}/{{.Dir}}" .
+	-output="dist/{{.OS}}-{{.Arch}}/{{.Dir}}" .
+
+.PHONY: package-dist
+package-dist: gop
+	gop --delete\
+	--os="linux darwin" \
+	--arch="amd64 386" \
+	--archive="tar.gz" \
+	--packages="windows/amd64/zip windows/386/zip"
+	--files="LICENSE README.md"
+	--input="dist/{{.OS}}-{{.Arch}}/{{.Dir}}" \
+	--output="dist/{{.Dir}}-${VERSION}-{{.OS}}-{{.Arch}}.{{.Archive}}" .
 
 .PHONY: dist
-dist: build-all ## Cross compile the full distribution
-	$(PKG_DST) cp ../README.md "{}" \;
-	$(PKG_DST) cp ../LICENSE "{}" \;
-	$(eval PKG=darwin-386) $(PKG_TAR)
-	$(eval PKG=darwin-amd64) $(PKG_TAR)
-	$(eval PKG=linux-386) $(PKG_TAR)
-	$(eval PKG=linux-amd64) $(PKG_TAR)
-	$(eval PKG=windows-386) $(PKG_ZIP)
-	$(eval PKG=windows-amd64) $(PKG_ZIP)
-	$(PKG_DST) rm -rf "{}" \;
+dist: build-dist package-dist ## Cross compile and package the full distribution
 
 .PHONY: fmt
 fmt: ## Reformat the source tree with gofmt
@@ -118,3 +120,9 @@ glide:
 gox:
 	@command -v gox >/dev/null 2>&1 || \
 	echo "Installing gox" && ${GOCC} get -u github.com/mitchellh/gox
+
+.PHONY: gop
+gop:
+	@command -v gop >/dev/null 2>&1 || \
+	echo "Installing gop" && ${GOCC} get -u github.com/gesquive/gop
+	@gop --version

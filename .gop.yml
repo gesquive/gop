@@ -1,0 +1,16 @@
+input: "dist/{{.OS}}-{{.Arch}}/{{.Dir}}"
+output: "dist/{{.Dir}}-${VERSION}-{{.OS}}-{{.Arch}}.{{.Archive}}"
+os:
+  - "linux"
+  - "darwin"
+arch:
+  - "amd64"
+  - "386"
+archive: "tar.gz"
+packages:
+  - "windows/amd64/zip"
+  - "windows/386/zip"
+delete: true
+files:
+  - LICENSE
+  - README.md
