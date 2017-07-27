@@ -106,7 +106,7 @@ func init() {
 	viper.BindPFlag("archive", RootCmd.PersistentFlags().Lookup("archive"))
 	viper.BindPFlag("os", RootCmd.PersistentFlags().Lookup("os"))
 	viper.BindPFlag("arch", RootCmd.PersistentFlags().Lookup("arch"))
-	viper.BindPFlag("pkgs", RootCmd.PersistentFlags().Lookup("packages"))
+	viper.BindPFlag("packages", RootCmd.PersistentFlags().Lookup("packages"))
 	viper.BindPFlag("delete", RootCmd.PersistentFlags().Lookup("delete"))
 
 	viper.SetDefault("input", "{{.Dir}}_{{.OS}}_{{.Arch}}")

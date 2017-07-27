@@ -1,8 +1,11 @@
 input: "dist/{{.Dir}}_{{.OS}}_{{.Arch}}"
 output: "dist/{{.Dir}}_{{.OS}}_{{.Arch}}.{{.Archive}}"
 archive: ["zip", "tar.gz", "tar.xz"]
-os: [linux,darwin,windows]
-arch: [386,amd64]
+os: ["linux","darwin","windows"]
+arch: ["386","amd64"]
+packages:
+  - "linux/arm/tar.gz"
+  - "linux/arm/tar.xz"
 files:
   - LICENSE
   - README.md
