@@ -21,7 +21,7 @@ func TestGetArchs(t *testing.T) {
 	assert.Equal(t, testArchs, results, "arch results do not match")
 }
 
-func TestGetDefaultArchs(t *testing.T) {
+func TestGetArchs_Default(t *testing.T) {
 	testArchs := []string{}
 	results, err := GetArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
@@ -29,12 +29,30 @@ func TestGetDefaultArchs(t *testing.T) {
 	assert.Equal(t, ArchList, results, "arch results do not match")
 }
 
-func TestGetArchsSpace(t *testing.T) {
+func TestGetArchs_WithDelimiters(t *testing.T) {
 	testArchs := []string{"386 amd64", "arm,arm64"}
 	results, err := GetArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"386", "amd64", "arm", "arm64"}
+	assert.Equal(t, expected, results, "arch results do not match")
+}
+
+func TestGetArchs_DefaultNegations(t *testing.T) {
+	testArchs := []string{"!amd64p32", "!ppc64le"}
+	results, err := GetArchs(testArchs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"386", "amd64", "arm", "arm64", "ppc64"}
+	assert.Equal(t, expected, results, "arch results do not match")
+}
+
+func TestGetArchs_WithNegations(t *testing.T) {
+	testArchs := []string{"386 amd64", "!arm,!arm64"}
+	results, err := GetArchs(testArchs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"386", "amd64"}
 	assert.Equal(t, expected, results, "arch results do not match")
 }
 
@@ -46,7 +64,7 @@ func TestGetOSs(t *testing.T) {
 	assert.Equal(t, testOSs, results, "os results do not match")
 }
 
-func TestGetDefaultOSs(t *testing.T) {
+func TestGetOSs_Default(t *testing.T) {
 	testOSs := []string{}
 	results, err := GetOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
@@ -54,7 +72,7 @@ func TestGetDefaultOSs(t *testing.T) {
 	assert.Equal(t, OSList, results, "os results do not match")
 }
 
-func TestGetOSsSpace(t *testing.T) {
+func TestGetOSs_WithDelimiters(t *testing.T) {
 	testOSs := []string{"darwin linux", "windows,rasbian"}
 	results, err := GetOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
@@ -63,28 +81,100 @@ func TestGetOSsSpace(t *testing.T) {
 	assert.Equal(t, expected, results, "os results do not match")
 }
 
+func TestGetOSs_DefaultNegations(t *testing.T) {
+	testOSs := []string{"!dragonfly", "!netbsd", "!openbsd", "!plan9", "!solaris"}
+	results, err := GetOSs(testOSs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"darwin", "freebsd", "linux", "windows"}
+	assert.Equal(t, expected, results, "os results do not match")
+}
+
+func TestGetOSs_WithNegations(t *testing.T) {
+	testOSs := []string{"darwin", "linux", "!windows"}
+	results, err := GetOSs(testOSs)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"darwin", "linux"}
+	assert.Equal(t, expected, results, "os results do not match")
+}
+
 func TestGetArchives(t *testing.T) {
-	testArchives := []string{"zip", "tgz", "tar.xz", "rar"}
+	testArchives := []string{"zip", "tar.gz", "tar.xz", "rar"}
 	results, err := GetArchiveTypes(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
-	expected := []string{"zip", "tgz", "tar.xz"}
+	expected := []string{"zip", "tar.gz", "tar.xz"}
 	assert.Equal(t, expected, results, "archive results do not match")
 }
 
-func TestGetDefaultArchives(t *testing.T) {
+func TestGetArchives_Default(t *testing.T) {
 	testArchives := []string{}
 	results, err := GetArchiveTypes(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
-	assert.Equal(t, DefaultArchiveList, results, "archive results do not match")
+	assert.Equal(t, ArchiveList, results, "archive results do not match")
+}
+
+func TestGetArchives_DefaultNegations(t *testing.T) {
+	testArchives := []string{"!zip", "!tar", "!tar.bz2", "!rar"}
+	results, err := GetArchiveTypes(testArchives)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"tar.gz", "tar.xz", "tar.lz4", "tar.sz"}
+	assert.Equal(t, expected, results, "archive results do not match")
+}
+
+func TestGetArchives_WithNegations(t *testing.T) {
+	testArchives := []string{"zip", "tar.gz", "tar.xz", "rar", "!zip", "!tar.bz2"}
+	results, err := GetArchiveTypes(testArchives)
+	assert.NoError(t, err, "unexpected error")
+
+	expected := []string{"tar.gz", "tar.xz"}
+	assert.Equal(t, expected, results, "archive results do not match")
+}
+
+func TestGetUserPackages(t *testing.T) {
+	pkg := Package{Arch: "amd64", OS: "linux", Archive: "tar.xz"}
+	pkg2 := Package{Arch: "x86", OS: "linux", Archive: "tar.gz"}
+	results, err := GetUserPackages([]string{pkg.String(), pkg2.String()})
+	assert.NoError(t, err, "unexpected error")
+
+	assert.Len(t, results, 2, "incorrect number of packages")
+	assert.Contains(t, results, pkg, "missing expected package")
+	assert.Contains(t, results, pkg2, "missing expected package")
+}
+
+func TestGetUserPackages_Default(t *testing.T) {
+	results, err := GetUserPackages([]string{})
+	assert.NoError(t, err, "unexpected error")
+
+	assert.Len(t, results, 0, "incorrect number of packages")
+}
+
+func TestGetUserPackages_WithDelimiters(t *testing.T) {
+	pkg := Package{Arch: "amd64", OS: "linux", Archive: "tar.xz"}
+	pkg2 := Package{Arch: "x86", OS: "linux", Archive: "tar.gz"}
+	results, err := GetUserPackages([]string{"linux/amd64/tar.xz linux/x86/tar.gz"})
+	assert.NoError(t, err, "unexpected error")
+
+	assert.Len(t, results, 2, "incorrect number of packages")
+	assert.Contains(t, results, pkg, "missing expected package")
+	assert.Contains(t, results, pkg2, "missing expected package")
+}
+
+func TestGetUserPackages_InvalidPackage(t *testing.T) {
+	results, err := GetUserPackages([]string{"linux/amd64"})
+	assert.NoError(t, err, "unexpected error")
+
+	assert.Len(t, results, 0, "incorrect number of packages")
 }
 
 func TestAssemblePackageInfo_DefaultList(t *testing.T) {
 	results, err := AssemblePackageInfo([]string{}, []string{}, []string{}, []string{})
 	assert.NoError(t, err, "unexpected error")
 
-	assert.Equal(t, 189, len(results), "package results do not match")
+	assert.Equal(t, 441, len(results), "package results do not match")
 }
 
 func TestAssemblePackageInfo_SingleAssembled(t *testing.T) {
@@ -118,6 +208,44 @@ func TestAssemblePackageInfo_DefineAndAssemble(t *testing.T) {
 
 	assert.Contains(t, results, pkg, "package missing from results")
 	assert.Contains(t, results, pkg2, "package missing from results")
+}
+
+func TestAssemblPackageInfo_NegateArch(t *testing.T) {
+	results, err := AssemblePackageInfo([]string{"!arm", "amd64", "arm", "x86"},
+		[]string{"linux"}, []string{"tar.gz", "tar.xz"}, []string{})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 4, "unexpected number of results")
+
+}
+
+func TestAssemblPackageInfo_NegatePackage(t *testing.T) {
+	results, err := AssemblePackageInfo([]string{"arm", "amd64", "x86"},
+		[]string{"linux"}, []string{"tar.gz", "tar.xz"}, []string{"!linux/arm/tar.xz"})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 5, "unexpected number of results")
+	assert.NotContains(t, results, Package{Arch: "arm", OS: "linux", Archive: "tar.xz"},
+		"negated package found in results")
+}
+
+func TestAssemblePackageInfo_OnlyNegate(t *testing.T) {
+	results, err := AssemblePackageInfo([]string{}, []string{}, []string{},
+		[]string{"!linux/arm/tar.xz", "!darwin/arm/tar.gz"})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 439, "unexpected number of results")
+	assert.NotContains(t, results, Package{Arch: "arm", OS: "linux", Archive: "tar.xz"},
+		"negated package found in results")
+	assert.NotContains(t, results, Package{Arch: "arm", OS: "darwin", Archive: "tar.gz"},
+		"negated package found in results")
+}
+
+func TestAssemblePackageInfo_Precedence(t *testing.T) {
+	// if included in packages, it should be built even if negated in user flags
+	results, err := AssemblePackageInfo([]string{"arm", "amd64", "!x86"},
+		[]string{"linux"}, []string{"tar.gz", "tar.xz"}, []string{"linux/x86/tar.gz"})
+	assert.NoError(t, err, "unexpected error")
+	assert.Len(t, results, 5, "unexpected number of results")
+	assert.Contains(t, results, Package{Arch: "x86", OS: "linux", Archive: "tar.gz"},
+		"negated package found in results")
 }
 
 func TestGetPackagePaths(t *testing.T) {

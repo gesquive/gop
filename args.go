@@ -32,15 +32,12 @@ func (p *Package) String() string {
 func ParsePackage(pkgString string) (Package, error) {
 	pkg := Package{}
 	parts := strings.SplitN(pkgString, "/", 3)
-	if len(parts) > 0 {
-		pkg.OS = parts[0]
+	if len(parts) != 3 {
+		return pkg, errors.Errorf("could not parse package '%s'", pkgString)
 	}
-	if len(parts) > 1 {
-		pkg.Arch = parts[1]
-	}
-	if len(parts) > 2 {
-		pkg.Archive = parts[2]
-	}
+	pkg.OS = parts[0]
+	pkg.Arch = parts[1]
+	pkg.Archive = parts[2]
 	return pkg, nil
 }
 
@@ -80,43 +77,56 @@ var (
 	ArchiveList = []string{
 		"zip",
 		"tar",
-		"tgz",
 		"tar.gz",
-		"tbz2",
 		"tar.bz2",
-		"txz",
 		"tar.xz",
-		"tlz4",
 		"tar.lz4",
-		"tsz",
 		"tar.sz",
 	}
 )
 
 // GetArchs generates a list of architectures from the user defined list
 func GetArchs(userArch []string) ([]string, error) {
-	if len(userArch) == 0 {
-		return ArchList, nil
-	}
-	if len(userArch) == 1 && strings.ToLower(userArch[0]) == "all" {
-		return ArchList, nil
-	}
-
 	cleanList := splitListItems(userArch)
+	pList, nList := splitNegatedItems(cleanList)
+	if len(pList) == 0 {
+		pList = ArchList
+	}
+	cleanList = negateList(pList, nList)
 	return cleanList, nil
 }
 
 // GetOSs generates a list of OSs from the user defined list
 func GetOSs(userOS []string) ([]string, error) {
-	if len(userOS) == 0 {
-		return OSList, nil
+	cleanList := splitListItems(userOS)
+	pList, nList := splitNegatedItems(cleanList)
+	if len(pList) == 0 {
+		pList = OSList
 	}
-	if len(userOS) == 1 && strings.ToLower(userOS[0]) == "all" {
-		return OSList, nil
+	cleanList = negateList(pList, nList)
+	return cleanList, nil
+}
+
+// GetArchiveTypes generates a list of valid archive types from the user defined list
+func GetArchiveTypes(userArchive []string) ([]string, error) {
+	cleanList := splitListItems(userArchive)
+	pList, nList := splitNegatedItems(cleanList)
+	if len(pList) == 0 {
+		pList = ArchiveList
+	}
+	cleanList = negateList(pList, nList)
+
+	validArchives := []string{}
+	for _, archive := range cleanList {
+		for _, dArchive := range ArchiveList {
+			if strings.ToLower(archive) == dArchive {
+				validArchives = append(validArchives, archive)
+				break
+			}
+		}
 	}
 
-	cleanList := splitListItems(userOS)
-	return cleanList, nil
+	return validArchives, nil
 }
 
 func GetUserPackages(userPkgs []string) ([]Package, error) {
@@ -132,112 +142,30 @@ func GetUserPackages(userPkgs []string) ([]Package, error) {
 	return pkgs, nil
 }
 
-// GetArchiveTypes generates a list of valid archive types from the user defined list
-func GetArchiveTypes(userArchive []string) ([]string, error) {
-	if len(userArchive) == 0 || len(userArchive) == 1 && strings.ToLower(userArchive[0]) == "default" {
-		return DefaultArchiveList, nil
-	}
-	if len(userArchive) == 1 && strings.ToLower(userArchive[0]) == "all" {
-		return ArchiveList, nil
-	}
-
-	cleanList := splitListItems(userArchive)
-
-	validArchives := []string{}
-	for _, archive := range cleanList {
-		for _, dArchive := range ArchiveList {
-			if strings.ToLower(archive) == dArchive {
-				validArchives = append(validArchives, archive)
-				break
-			}
-		}
-	}
-
-	return validArchives, nil
-}
-
-// GetAppDirs returns the file paths to the packages that are "main"
-// packages, from the list of packages given. The list of packages can
-// include relative paths, the special "..." Go keyword, etc.
-func GetAppDirs(packages []string) ([]string, error) {
-	if len(packages) < 1 {
-		packages = []string{"."}
-	}
-
-	// Get the packages that are in the given paths
-	args := make([]string, 0, len(packages)+3)
-	args = append(args, "list", "-f", "{{.Name}}|{{.ImportPath}}")
-	args = append(args, packages...)
-
-	output, err := execGo("go", nil, "", args...)
-	if err != nil {
-		return nil, err
-	}
-
-	results := make([]string, 0, len(output))
-	for _, line := range strings.Split(output, "\n") {
-		if line == "" {
-			continue
-		}
-
-		parts := strings.SplitN(line, "|", 2)
-		if len(parts) != 2 {
-			cli.Warn("Bad line reading packages: %s", line)
-			continue
-		}
-
-		if parts[0] == "main" {
-			results = append(results, parts[1])
-		}
-	}
-
-	return results, nil
-}
-
-func splitListItems(list []string) []string {
-	cleanList := []string{}
-	for _, item := range list {
-		if parts := strings.Split(item, " "); len(parts) > 1 {
-			cleanList = append(cleanList, parts...)
-		} else if parts := strings.Split(item, ","); len(parts) > 1 {
-			cleanList = append(cleanList, parts...)
-		} else {
-			cleanList = append(cleanList, item)
-		}
-	}
-	return cleanList
-}
-
-func appendIfMissing(pkgs []Package, pkg Package) []Package {
-	match := strings.ToLower(pkg.String())
-	missing := true
-	for _, existing := range pkgs {
-		if strings.ToLower(existing.String()) == match {
-			missing = false
-		}
-	}
-
-	if missing {
-		pkgs = append(pkgs, pkg)
-	}
-	return pkgs
-}
-
 // AssemblePackageInfo generates a list of packages from the user defined arguments
 func AssemblePackageInfo(userArch []string, userOS []string,
 	userArchive []string, userPackages []string) ([]Package, error) {
-	archList, _ := GetArchs(userArch)
-	osList, _ := GetOSs(userOS)
-	archiveList, _ := GetArchiveTypes(userArchive)
+	archList, _ := GetUserArchs(userArch)
+	osList, _ := GetUserOSs(userOS)
+	archiveList, _ := GetUserArchives(userArchive)
 	specificList, _ := GetUserPackages(userPackages)
 
-	packageList := specificList
+	packageList := []Package{}
 	for _, arch := range archList {
 		for _, os := range osList {
 			for _, archive := range archiveList {
 				pkg := Package{Arch: arch, OS: os, Archive: archive}
 				packageList = appendIfMissing(packageList, pkg)
 			}
+		}
+	}
+
+	for _, userPkg := range specificList {
+		if strings.HasPrefix(userPkg.String(), "!") {
+			userPkg.OS = userPkg.OS[1:]
+			packageList = removeIfPresent(packageList, userPkg)
+		} else {
+			packageList = appendIfMissing(packageList, userPkg)
 		}
 	}
 
@@ -292,6 +220,115 @@ func GetPackageFiles(packages []Package, fileList []string) ([]Package, error) {
 		pkgs = append(pkgs, pkg)
 	}
 	return pkgs, nil
+}
+
+// GetAppDirs returns the file paths to the packages that are "main"
+// packages, from the list of packages given. The list of packages can
+// include relative paths, the special "..." Go keyword, etc.
+func GetAppDirs(packages []string) ([]string, error) {
+	if len(packages) < 1 {
+		packages = []string{"."}
+	}
+
+	// Get the packages that are in the given paths
+	args := make([]string, 0, len(packages)+3)
+	args = append(args, "list", "-f", "{{.Name}}|{{.ImportPath}}")
+	args = append(args, packages...)
+
+	output, err := execGo("go", nil, "", args...)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]string, 0, len(output))
+	for _, line := range strings.Split(output, "\n") {
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, "|", 2)
+		if len(parts) != 2 {
+			cli.Warn("Bad line reading packages: %s", line)
+			continue
+		}
+
+		if parts[0] == "main" {
+			results = append(results, parts[1])
+		}
+	}
+
+	return results, nil
+}
+
+func splitListItems(list []string) []string {
+	cleanList := []string{}
+	for _, item := range list {
+		if parts := strings.Split(item, " "); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else if parts := strings.Split(item, ","); len(parts) > 1 {
+			cleanList = append(cleanList, parts...)
+		} else {
+			cleanList = append(cleanList, item)
+		}
+	}
+	return cleanList
+}
+
+func splitNegatedItems(list []string) (p []string, n []string) {
+	for _, item := range list {
+		if strings.HasPrefix(item, "!") {
+			n = append(n, item[1:])
+		} else {
+			p = append(p, item)
+		}
+	}
+	return
+}
+
+func negateList(pList []string, nList []string) []string {
+	finalList := []string{}
+
+	for _, item := range pList {
+		lowerItem := strings.ToLower(item)
+		found := false
+		for _, negation := range nList {
+			if lowerItem == strings.ToLower(negation) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			finalList = append(finalList, item)
+		}
+	}
+
+	return finalList
+}
+
+func removeIfPresent(pkgs []Package, pkg Package) []Package {
+	match := strings.ToLower(pkg.String())
+	result := []Package{}
+	for _, existing := range pkgs {
+		if strings.ToLower(existing.String()) != match {
+			result = append(result, existing)
+		}
+	}
+	return result
+}
+
+func appendIfMissing(pkgs []Package, pkg Package) []Package {
+	match := strings.ToLower(pkg.String())
+	missing := true
+	for _, existing := range pkgs {
+		if strings.ToLower(existing.String()) == match {
+			missing = false
+		}
+	}
+
+	if missing {
+		pkgs = append(pkgs, pkg)
+	}
+	return pkgs
 }
 
 // NOTE: The original code can be found at the gox repo

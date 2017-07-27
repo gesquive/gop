@@ -19,9 +19,42 @@ var showVersion bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:              "gack [flags] [packages]",
-	Short:            "Package your executables",
-	Long:             `Package your multi-os/arch executables`,
+	Use:   "gack [flags] [packages]",
+	Short: "Package your executables",
+	Long: `Package your multi-os/arch executables
+
+If no specific operating systems, architectures or archives are specified, gack
+  will search for all known builds and package any found.
+
+Input/Output path template:
+
+  The input & output path for the binaries/packages is specified with the
+  "--input" and "--output" flags respectively. The value is a string that
+  is a Go text template. The default values are "{{.Dir}}_{{.OS}}_{{.Arch}}"
+  and "{{.Dir}}_{{.OS}}_{{.Arch}}.{{.Archive}}". The variables and
+  their values should be self-explanatory.
+
+Packages (OS/Arch/Archive):
+
+  The operating systems, architectures, and archives to package may be
+  specified with the "--arch", "--os" & "--archive" flags. These are space
+  separated lists of values to build for, respectively. You may prefix an
+  OS, Arch or Archive with "!" to negate and not package for that value.
+  If the list is made up of only negations, then the negations will come from
+  the default list.
+
+  Additionally, the "--packages" flag may be used to specify complete
+  os/arch/archive values that should be built or ignored. The syntax for
+  this is what you would expect: "linux/amd64/zip" would be a valid package
+  value. Multiple values can be space separated. An os/arch/archive definition
+  can begin with "!" to not build for that platform.
+
+  The "--packages" flag has the highest precedent when determing whether to
+  build for a platform. If it is included in the "--packages" list, it will be
+  built even if the specific os, arch or archive is negated in  the "--os",
+  "--arch" and "--archive" flags respectively.
+
+`,
 	PersistentPreRun: preRun,
 	Run:              run,
 }
