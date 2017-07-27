@@ -13,121 +13,121 @@ func TestGetAppDirs(t *testing.T) {
 	assert.Equal(t, []string{"github.com/gesquive/gack"}, results, "results do not match")
 }
 
-func TestGetArchs(t *testing.T) {
+func TestGetUserArchs(t *testing.T) {
 	testArchs := []string{"386", "amd64", "arm", "x86"}
-	results, err := GetArchs(testArchs)
+	results, err := GetUserArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, testArchs, results, "arch results do not match")
 }
 
-func TestGetArchs_Default(t *testing.T) {
+func TestGetUserArchs_Default(t *testing.T) {
 	testArchs := []string{}
-	results, err := GetArchs(testArchs)
+	results, err := GetUserArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, ArchList, results, "arch results do not match")
 }
 
-func TestGetArchs_WithDelimiters(t *testing.T) {
+func TestGetUserArchs_WithDelimiters(t *testing.T) {
 	testArchs := []string{"386 amd64", "arm,arm64"}
-	results, err := GetArchs(testArchs)
+	results, err := GetUserArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"386", "amd64", "arm", "arm64"}
 	assert.Equal(t, expected, results, "arch results do not match")
 }
 
-func TestGetArchs_DefaultNegations(t *testing.T) {
+func TestGetUserArchs_DefaultNegations(t *testing.T) {
 	testArchs := []string{"!amd64p32", "!ppc64le"}
-	results, err := GetArchs(testArchs)
+	results, err := GetUserArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"386", "amd64", "arm", "arm64", "ppc64"}
 	assert.Equal(t, expected, results, "arch results do not match")
 }
 
-func TestGetArchs_WithNegations(t *testing.T) {
+func TestGetUserArchs_WithNegations(t *testing.T) {
 	testArchs := []string{"386 amd64", "!arm,!arm64"}
-	results, err := GetArchs(testArchs)
+	results, err := GetUserArchs(testArchs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"386", "amd64"}
 	assert.Equal(t, expected, results, "arch results do not match")
 }
 
-func TestGetOSs(t *testing.T) {
+func TestGetUserOSs(t *testing.T) {
 	testOSs := []string{"darwin", "linux", "windows", "rasbian"}
-	results, err := GetOSs(testOSs)
+	results, err := GetUserOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, testOSs, results, "os results do not match")
 }
 
-func TestGetOSs_Default(t *testing.T) {
+func TestGetUserOSs_Default(t *testing.T) {
 	testOSs := []string{}
-	results, err := GetOSs(testOSs)
+	results, err := GetUserOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, OSList, results, "os results do not match")
 }
 
-func TestGetOSs_WithDelimiters(t *testing.T) {
+func TestGetUserOSs_WithDelimiters(t *testing.T) {
 	testOSs := []string{"darwin linux", "windows,rasbian"}
-	results, err := GetOSs(testOSs)
+	results, err := GetUserOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"darwin", "linux", "windows", "rasbian"}
 	assert.Equal(t, expected, results, "os results do not match")
 }
 
-func TestGetOSs_DefaultNegations(t *testing.T) {
+func TestGetUserOSs_DefaultNegations(t *testing.T) {
 	testOSs := []string{"!dragonfly", "!netbsd", "!openbsd", "!plan9", "!solaris"}
-	results, err := GetOSs(testOSs)
+	results, err := GetUserOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"darwin", "freebsd", "linux", "windows"}
 	assert.Equal(t, expected, results, "os results do not match")
 }
 
-func TestGetOSs_WithNegations(t *testing.T) {
+func TestGetUserOSs_WithNegations(t *testing.T) {
 	testOSs := []string{"darwin", "linux", "!windows"}
-	results, err := GetOSs(testOSs)
+	results, err := GetUserOSs(testOSs)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"darwin", "linux"}
 	assert.Equal(t, expected, results, "os results do not match")
 }
 
-func TestGetArchives(t *testing.T) {
+func TestGetUserArchives(t *testing.T) {
 	testArchives := []string{"zip", "tar.gz", "tar.xz", "rar"}
-	results, err := GetArchiveTypes(testArchives)
+	results, err := GetUserArchives(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"zip", "tar.gz", "tar.xz"}
 	assert.Equal(t, expected, results, "archive results do not match")
 }
 
-func TestGetArchives_Default(t *testing.T) {
+func TestGetUserArchives_Default(t *testing.T) {
 	testArchives := []string{}
-	results, err := GetArchiveTypes(testArchives)
+	results, err := GetUserArchives(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
 	assert.Equal(t, ArchiveList, results, "archive results do not match")
 }
 
-func TestGetArchives_DefaultNegations(t *testing.T) {
+func TestGetUserArchives_DefaultNegations(t *testing.T) {
 	testArchives := []string{"!zip", "!tar", "!tar.bz2", "!rar"}
-	results, err := GetArchiveTypes(testArchives)
+	results, err := GetUserArchives(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"tar.gz", "tar.xz", "tar.lz4", "tar.sz"}
 	assert.Equal(t, expected, results, "archive results do not match")
 }
 
-func TestGetArchives_WithNegations(t *testing.T) {
+func TestGetUserArchives_WithNegations(t *testing.T) {
 	testArchives := []string{"zip", "tar.gz", "tar.xz", "rar", "!zip", "!tar.bz2"}
-	results, err := GetArchiveTypes(testArchives)
+	results, err := GetUserArchives(testArchives)
 	assert.NoError(t, err, "unexpected error")
 
 	expected := []string{"tar.gz", "tar.xz"}

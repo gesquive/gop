@@ -85,8 +85,8 @@ var (
 	}
 )
 
-// GetArchs generates a list of architectures from the user defined list
-func GetArchs(userArch []string) ([]string, error) {
+// GetUserArchs generates a list of architectures from the user defined list
+func GetUserArchs(userArch []string) ([]string, error) {
 	cleanList := splitListItems(userArch)
 	pList, nList := splitNegatedItems(cleanList)
 	if len(pList) == 0 {
@@ -96,8 +96,8 @@ func GetArchs(userArch []string) ([]string, error) {
 	return cleanList, nil
 }
 
-// GetOSs generates a list of OSs from the user defined list
-func GetOSs(userOS []string) ([]string, error) {
+// GetUserOSs generates a list of OSs from the user defined list
+func GetUserOSs(userOS []string) ([]string, error) {
 	cleanList := splitListItems(userOS)
 	pList, nList := splitNegatedItems(cleanList)
 	if len(pList) == 0 {
@@ -107,8 +107,8 @@ func GetOSs(userOS []string) ([]string, error) {
 	return cleanList, nil
 }
 
-// GetArchiveTypes generates a list of valid archive types from the user defined list
-func GetArchiveTypes(userArchive []string) ([]string, error) {
+// GetUserArchives generates a list of valid archive types from the user defined list
+func GetUserArchives(userArchive []string) ([]string, error) {
 	cleanList := splitListItems(userArchive)
 	pList, nList := splitNegatedItems(cleanList)
 	if len(pList) == 0 {
