@@ -10,7 +10,7 @@ func TestGetAppDirs(t *testing.T) {
 	results, err := GetAppDirs([]string{})
 	assert.NoError(t, err, "error not expected")
 
-	assert.Equal(t, []string{"github.com/gesquive/gack"}, results, "results do not match")
+	assert.Equal(t, []string{"github.com/gesquive/gop"}, results, "results do not match")
 }
 
 func TestGetUserArchs(t *testing.T) {

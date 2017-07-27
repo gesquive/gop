@@ -10,13 +10,13 @@ GOCC := go
 VERSION := $(shell git describe --always --tags)
 
 # Binary name for bintray
-BIN_NAME=gack
+BIN_NAME=gop
 
 # Project owner for bintray
 OWNER=gesquive
 
 # Project name for bintray
-PROJECT_NAME=gack
+PROJECT_NAME=gop
 
 # Project url used for builds
 # examples: github.com, bitbucket.org

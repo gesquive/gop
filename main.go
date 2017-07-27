@@ -6,7 +6,7 @@ var version = "v0.1.0"
 var dirty = ""
 
 func main() {
-	displayVersion := fmt.Sprintf("gack %s%s",
+	displayVersion := fmt.Sprintf("gop %s%s",
 		version,
 		dirty)
 	Execute(displayVersion)

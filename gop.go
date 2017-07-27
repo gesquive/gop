@@ -19,11 +19,11 @@ var showVersion bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "gack [flags] [packages]",
+	Use:   "gop [flags] [packages]",
 	Short: "Package your executables",
 	Long: `Package your multi-os/arch executables
 
-If no specific operating systems, architectures or archives are specified, gack
+If no specific operating systems, architectures or archives are specified, gop
   will search for all known builds and package any found.
 
 Input/Output path template:
@@ -74,7 +74,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
-		"config file (default .gack.yml)")
+		"config file (default .gop.yml)")
 	RootCmd.PersistentFlags().BoolVarP(&logDebug, "debug", "D", false,
 		"Write debug messages to console")
 	RootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false,
@@ -129,9 +129,9 @@ func initConfig() {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		homeConfig := path.Join(home, ".config/gack")
+		homeConfig := path.Join(home, ".config/gop")
 
-		viper.SetConfigName(".gack")    // name of config file (without extension)
+		viper.SetConfigName(".gop")     // name of config file (without extension)
 		viper.AddConfigPath(".")        // adding current directory as first search path
 		viper.AddConfigPath(homeConfig) // adding home directory as next search path
 
