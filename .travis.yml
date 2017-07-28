@@ -1,0 +1,17 @@
+language: go
+go:
+- 1.8.x
+install: make deps
+script: make
+before_deploy: make dist
+deploy:
+  provider: releases
+  api_key:
+    secure: LrLkYKWN7mldyqcW3Hl/Q80DyS7U0eJUtKju+3LueUPIIk6iufu+sCvu2gzbA5OMPlq8oAvVqNHrEiXxylSJpl69AaZvn+fdqte00zZJmkY59wgB0ZXOvqX6lVpaPHLevSwtCLxqvn1EZmt2ORXn9XY8PUL+C1cBiM9OCRVJ4t8Xo9hKcpLg4GfOzG52mFuJkg1gOPjofLtAIIOqawBhkzIv/srFiqcrewq979Fh1/EDoiU75In1iPC2+tqMh0ZZtSGbKOvZOa+fSQaIl2W41dcOVwf5/Lft0ovuMuT2HKRH9HdBFTnHvvwENuAxlaP8U7Ao0eNR8vmrxIabfe7DD0YXSpVTZ+UmYOifIZOd/2aCRS+a9HrkmOUEKftv8HZkMxtsKgHnR9i1RqkXpTbQEf8HweJxxMMZRT/GA7bX7vrMD7KzRYo5x1jAiAYnIQpe56vXaevXf7jvYhPaTuu8B9rB+xADYmq4g/xsDX1xG5bBV25MqKJueIdJKP5PQSomECSC18R9M8/lAihQyGErVUvsi6sIM6cjASHsrvTBh1QvbGGPSKtpZSeMvBL99AUjGd6C4JpHpnDaHZOECDq2oW3JQqZfEfCZ/NEGzRj08Xzfv6RiYKAD76jEDrOhVrAya+cb94RI1rJwMDzhIvBGNfekVPQFg3kwL0hLRzKVCsQ=
+  file_glob: true
+  file:
+    - dist/*-v*.tar.gz
+    - dist/*-v*.zip
+  on:
+    tags: true
+    condition: $TRAVIS_TAG =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[^ \t\r\n\v\f]*)?$ && $TRAVIS_GO_VERSION =~ ^1\.8\.[0-9]+$

@@ -5,6 +5,7 @@ dist/
 
 *.yml
 !config.sample.yml
+!.travis.yml
 !.gop.yml
 
 gop
