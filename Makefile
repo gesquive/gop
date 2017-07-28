@@ -87,12 +87,12 @@ build-dist: gox
 
 .PHONY: package-dist
 package-dist: gop
-	gop --delete\
+	gop --delete \
 	--os="linux darwin" \
 	--arch="amd64 386" \
 	--archive="tar.gz" \
-	--packages="windows/amd64/zip windows/386/zip"
-	--files="LICENSE README.md"
+	--packages="windows/amd64/zip windows/386/zip" \
+	--files="LICENSE README.md" \
 	--input="dist/{{.OS}}-{{.Arch}}/{{.Dir}}" \
 	--output="dist/{{.Dir}}-${VERSION}-{{.OS}}-{{.Arch}}.{{.Archive}}" .
 
