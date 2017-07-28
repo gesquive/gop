@@ -1,0 +1,15 @@
+package: github.com/gesquive/gop
+import:
+- package: github.com/gesquive/cli
+  version: ~0.2.0
+- package: github.com/mholt/archiver
+- package: github.com/mitchellh/go-homedir
+- package: github.com/pkg/errors
+  version: ~0.8.0
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+testImport:
+- package: github.com/stretchr/testify
+  version: ~1.1.4
+  subpackages:
+  - assert
