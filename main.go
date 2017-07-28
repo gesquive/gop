@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-var version = "v0.2.0"
+var version = "v0.2.1"
 var dirty = ""
 
 func main() {
