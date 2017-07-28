@@ -194,6 +194,9 @@ func GetPackagePaths(packages []Package, dirs []string, inputTemplate string,
 				return nil, errors.Wrap(err, "error generating input path")
 			}
 			filledPkg.ExePath = inputPath.String()
+			if strings.ToLower(filledPkg.OS) == "windows" {
+				filledPkg.ExePath = fmt.Sprintf("%s.exe", filledPkg.ExePath)
+			}
 
 			outputTpl, err := template.New("output").Parse(outputTemplate)
 			if err != nil {
