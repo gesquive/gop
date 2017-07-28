@@ -214,6 +214,7 @@ func GetPackagePaths(packages []Package, dirs []string, inputTemplate string,
 
 func GetPackageFiles(packages []Package, fileList []string) ([]Package, error) {
 	pkgs := []Package{}
+	fileList = splitListItems(fileList)
 	for _, pkg := range packages {
 		files := append([]string{pkg.ExePath}, fileList...)
 		pkg.FileList = files
