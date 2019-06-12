@@ -13,7 +13,7 @@ You should be able to use the same `arch` & `os` arguments used to run `gox`. Th
 ## Installing
 
 ### Compile
-This project requires go 1.8+ to compile. Just run `go get -u github.com/gesquive/gop` and the executable should be built for you automatically in your `$GOPATH`.
+This project requires go 1.8+ to compile, but will require go 1.11+ if you need to use go mod. Just run `go get -u github.com/gesquive/gop` and the executable should be built for you automatically in your `$GOPATH`.
 
 Optionally you can run `make install` to build and copy the executable to `/usr/local/bin/` with correct permissions.
 

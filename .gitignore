@@ -3,6 +3,9 @@ vendor/*
 pkg/
 dist/
 
+coverage.dat
+coverage.html
+
 *.yml
 !config.sample.yml
 !.travis.yml

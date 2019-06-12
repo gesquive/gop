@@ -34,6 +34,7 @@ GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
 
 INSTALL_PATH=$(GOPATH)/src/${REPO_HOST_URL}/${OWNER}/${PROJECT_NAME}
 
+PKG_LIST := ./...
 PKG_TAR=cd dist/${PKG} && tar --exclude=".*" --owner=0 --group=0 -zcf ../${PROJECT_NAME}-${VERSION}-${PKG}.tar.gz *
 PKG_ZIP=cd dist/${PKG} && zip --exclude .\* -qr ../${PROJECT_NAME}-${VERSION}-${PKG}.zip *
 PKG_DST=cd dist && find . -mindepth 1 -maxdepth 1 -type d -exec
@@ -59,16 +60,20 @@ install: build ## Install the binaries on this computer
 	install -m 755 ./${BIN_NAME} ${DESTDIR}/usr/local/bin/${BIN_NAME}
 
 .PHONY: deps
-deps: glide ## Download project dependencies
-	glide install
+deps: ## Download project dependencies
+	${GOCC} mod download
 
 .PHONY: test
-test: glide ## Run golang tests
-	${GOCC} test $(shell glide novendor)
+test: ## Run golang tests
+	${GOCC} test ${PKG_LIST}
 
 .PHONY: bench
-bench: glide ## Run golang benchmarks
-	${GOCC} test -benchmem -bench=. $(shell glide novendor)
+bench: ## Run golang benchmarks
+	${GOCC} test -benchmem -bench=. ${PKG_LIST}
+
+.PHONY: cover
+cover: ## Run coverage report
+	${GOCC} test -v -cover ${PKG_LIST}
 
 .PHONY: clean
 clean: ## Clean the directory tree of artifacts
@@ -108,13 +113,6 @@ link: $(INSTALL_PATH) ## Symlink this project into the GOPATH
 $(INSTALL_PATH):
 	@mkdir -p `dirname $(INSTALL_PATH)`
 	@ln -s $(PWD) $(INSTALL_PATH) >/dev/null 2>&1
-
-.PHONY: glide
-glide:
-	@command -v glide >/dev/null 2>&1 || \
-	echo "Installing glide" && ${GOCC} get -u github.com/Masterminds/glide
-	@glide --version
-
 
 .PHONY: gox
 gox:
