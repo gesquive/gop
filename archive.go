@@ -7,35 +7,42 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Archive(archivePath string, archiveType string, files []string) error {
+func archive(archivePath string, archiveType string, files []string) error {
 	switch strings.ToLower(archiveType) {
 	case "zip":
-		if err := archiver.Zip.Make(archivePath, files); err != nil {
+		zip := archiver.NewZip()
+		if err := zip.Archive(files, archivePath); err != nil {
 			return errors.Wrap(err, "archving zip")
 		}
 	case "tar":
-		if err := archiver.Tar.Make(archivePath, files); err != nil {
+		tar := archiver.NewTar()
+		if err := tar.Archive(files, archivePath); err != nil {
 			return errors.Wrap(err, "archving tar")
 		}
-	case "tgz", "tar.gz":
-		if err := archiver.TarGz.Make(archivePath, files); err != nil {
-			return errors.Wrap(err, "archving tar.gz")
-		}
 	case "tbz2", "tar.bz2":
-		if err := archiver.TarBz2.Make(archivePath, files); err != nil {
+		tarbz2 := archiver.NewTarBz2()
+		if err := tarbz2.Archive(files, archivePath); err != nil {
 			return errors.Wrap(err, "archving tar.bz2")
 		}
-	case "txz", "tar.xz":
-		if err := archiver.TarXZ.Make(archivePath, files); err != nil {
-			return errors.Wrap(err, "archving tar.xz")
+	case "tgz", "tar.gz":
+		targz := archiver.NewTarGz()
+		if err := targz.Archive(files, archivePath); err != nil {
+			return errors.Wrap(err, "archving tar.gz")
 		}
 	case "tlz4", "tar.lz4":
-		if err := archiver.TarLz4.Make(archivePath, files); err != nil {
+		tarlz4 := archiver.NewTarLz4()
+		if err := tarlz4.Archive(files, archivePath); err != nil {
 			return errors.Wrap(err, "archving tar.lz4")
 		}
 	case "tsz", "tar.sz":
-		if err := archiver.TarSz.Make(archivePath, files); err != nil {
+		tarsz := archiver.NewTarSz()
+		if err := tarsz.Archive(files, archivePath); err != nil {
 			return errors.Wrap(err, "archving tar.sz")
+		}
+	case "txz", "tar.xz":
+		tarxz := archiver.NewTarXz()
+		if err := tarxz.Archive(files, archivePath); err != nil {
+			return errors.Wrap(err, "archving tar.xz")
 		}
 	default:
 		return errors.Errorf("unknown archving format '%s'", archiveType)

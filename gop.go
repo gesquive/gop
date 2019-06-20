@@ -213,7 +213,7 @@ func run(cmd *cobra.Command, args []string) {
 			continue
 		}
 		cli.Info("--> %60s", pkg.ArchivePath)
-		err = Archive(pkg.ArchivePath, pkg.Archive, pkg.FileList)
+		err = archive(pkg.ArchivePath, pkg.Archive, pkg.FileList)
 		if err != nil {
 			cli.Error("error: %s", err)
 		}
