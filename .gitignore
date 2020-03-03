@@ -8,7 +8,8 @@ coverage.html
 
 *.yml
 !config.sample.yml
-!.travis.yml
 !.gop.yml
+!.goreleaser.yml
+!.circleci/config.yml
 
 gop

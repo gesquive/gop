@@ -4,17 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 
 	"github.com/gesquive/cli"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var displayVersion string
-
-var logDebug bool
+var debug bool
 var showVersion bool
 
 // RootCmd represents the base command when called without any subcommands
@@ -60,10 +57,9 @@ Packages (OS/Arch/Archive):
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
-func Execute(version string) {
-	displayVersion = version
-	RootCmd.SetHelpTemplate(fmt.Sprintf("%s\nVersion:\n  github.com/gesquive/%s\n",
-		RootCmd.HelpTemplate(), displayVersion))
+func Execute() {
+	RootCmd.SetHelpTemplate(fmt.Sprintf("%s\nVersion:\n  github.com/gesquive/gop %s\n",
+		RootCmd.HelpTemplate(), buildVersion))
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(-1)
@@ -73,9 +69,9 @@ func Execute(version string) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "",
+	RootCmd.PersistentFlags().StringP("config", "c", "",
 		"config file (default .gop.yml)")
-	RootCmd.PersistentFlags().BoolVarP(&logDebug, "debug", "D", false,
+	RootCmd.PersistentFlags().BoolVarP(&debug, "debug", "D", false,
 		"Write debug messages to console")
 	RootCmd.PersistentFlags().BoolVarP(&showVersion, "version", "V", false,
 		"Show the version and exit")
@@ -100,6 +96,19 @@ func init() {
 
 	RootCmd.PersistentFlags().MarkHidden("debug")
 
+	viper.SetEnvPrefix("gop")
+	viper.AutomaticEnv()
+	viper.BindEnv("config")
+	viper.BindEnv("input")
+	viper.BindEnv("output")
+	viper.BindEnv("files")
+	viper.BindEnv("archive")
+	viper.BindEnv("os")
+	viper.BindEnv("arch")
+	viper.BindEnv("packages")
+	viper.BindEnv("delete")
+
+	viper.BindPFlag("config", RootCmd.PersistentFlags().Lookup("config"))
 	viper.BindPFlag("input", RootCmd.PersistentFlags().Lookup("input"))
 	viper.BindPFlag("output", RootCmd.PersistentFlags().Lookup("output"))
 	viper.BindPFlag("files", RootCmd.PersistentFlags().Lookup("files"))
@@ -119,39 +128,43 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
+	cfgFile := viper.GetString("config")
+	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		homeConfig := path.Join(home, ".config/gop")
-
-		viper.SetConfigName(".gop")     // name of config file (without extension)
-		viper.AddConfigPath(".")        // adding current directory as first search path
-		viper.AddConfigPath(homeConfig) // adding home directory as next search path
-
+		viper.SetConfigName(".gop")               // name of config file (without extension)
+		viper.AddConfigPath(".")                  // adding current directory as first search path
+		viper.AddConfigPath("$HOME/.config/.gop") // adding home directory as next search path
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		cli.Debug("Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			return
+		}
+		if !showVersion {
+			fmt.Println("Error opening config: ", err)
+		}
 	}
 }
 
 func preRun(cmd *cobra.Command, args []string) {
-	if logDebug {
-		cli.SetPrintLevel(cli.LevelDebug)
-	}
 	if showVersion {
-		cli.Info(displayVersion)
+		fmt.Printf("github.com/gesquive/gop\n")
+		fmt.Printf(" Version:    %s\n", buildVersion)
+		if len(buildCommit) > 6 {
+			fmt.Printf(" Git Commit: %s\n", buildCommit[:7])
+		}
+		if buildDate != "" {
+			fmt.Printf(" Build Date: %s\n", buildDate)
+		}
+		fmt.Printf(" Go Version: %s\n", runtime.Version())
+		fmt.Printf(" OS/Arch:    %s/%s\n", runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
+	}
+
+	if debug {
+		cli.SetPrintLevel(cli.LevelDebug)
 	}
 	cli.Debug("Running with debug turned on")
 	cli.Debug("config: %s", viper.ConfigFileUsed())

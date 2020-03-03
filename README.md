@@ -1,7 +1,8 @@
 # gop - go packager
-[![Travis CI](https://img.shields.io/travis/gesquive/gop/master.svg?style=flat-square)](https://travis-ci.org/gesquive/gop)
 [![Software License](https://img.shields.io/badge/License-MIT-orange.svg?style=flat-square)](https://github.com/gesquive/gop/blob/master/LICENSE)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://godoc.org/github.com/gesquive/gop)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](https://pkg.go.dev/github.com/gesquive/gop)
+[![Build Status](https://img.shields.io/circleci/build/github/gesquive/gop?style=flat-square)](https://circleci.com/gh/gesquive/gop)
+[![Coverage Report](https://img.shields.io/codecov/c/gh/gesquive/gop?style=flat-square)](https://codecov.io/gh/gesquive/gop)
 
 Package your multi-os/arch executables. `gop` is intended to compliment [gox](https://github.com/mitchellh/gox) and provide the packaging aspect of a deployment.
 
@@ -13,7 +14,8 @@ You should be able to use the same `arch` & `os` arguments used to run `gox`. Th
 ## Installing
 
 ### Compile
-This project requires go 1.8+ to compile, but will require go 1.11+ if you need to use go mod. Just run `go get -u github.com/gesquive/gop` and the executable should be built for you automatically in your `$GOPATH`.
+This project requires go 1.8+ to compile. Just run `go get -u github.com/gesquive/gop` and the executable should be built for you automatically in your `$GOPATH`.
+If using `go mod`, go 1.11+ is required and you will need to set `GO111MODULE=on` in order for `go get` to complete properly.
 
 Optionally you can run `make install` to build and copy the executable to `/usr/local/bin/` with correct permissions.
 
@@ -22,6 +24,13 @@ Alternately, you can download the latest release for your platform from [github]
 
 Once you have an executable, make sure to copy it somewhere on your path like `/usr/local/bin` or `C:/Program Files/`.
 If on a \*nix/mac system, make sure to run `chmod +x /path/to/gop`.
+
+### Homebrew
+This app is also avalable from this [homebrew tap](https://github.com/gesquive/homebrew-tap). Just install the tap and then the app will be available.
+```shell
+$ brew tap gesquive/tap
+$ brew install gop
+```
 
 ## Configuration
 
